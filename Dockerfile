@@ -1,17 +1,17 @@
-FROM quay.io/vektorcloud/go:1.15
-
-RUN apk add --no-cache make
+FROM golang:alpine as build
 
 WORKDIR /app
 COPY go.mod .
 RUN go mod download
 
 COPY . .
-RUN make build && \
+RUN apk add --virtual .build make git && \
+    make build && \
+    apk del .build && \
     mkdir -p /go/bin && \
     mv -v ctop /go/bin/
 
 FROM scratch
 ENV TERM=linux
-COPY --from=0 /go/bin/ctop /ctop
+COPY --from=build /go/bin/ctop /ctop
 ENTRYPOINT ["/ctop"]
